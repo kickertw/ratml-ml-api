@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -28,9 +30,24 @@ namespace nba_ml_api.Controllers
         [Route("/forecasts/teams")]
         public async Task<IActionResult> GetWinningTeam(GetWinningTeamDTO dto)
         {
-            Game teamAStats = await GetGameStats(dto.TeamAId, dto.TeamAYear, dto.Features);
+            Game teamAStats;
 
-            Game teamBStats = await GetGameStats(dto.TeamBId, dto.TeamBYear, dto.Features);
+            Game teamBStats;
+
+            if (dto.TeamAFeatures != null && dto.TeamBFeatures != null
+                && dto.TeamAFeatures.Any() && dto.TeamBFeatures.Any())
+            {
+                teamAStats = GetGameStats(dto.TeamAId, dto.TeamAYear, dto.TeamAFeatures);
+
+                teamBStats = GetGameStats(dto.TeamBId, dto.TeamBYear, dto.TeamBFeatures);
+            }
+
+            else
+            {
+                teamAStats = await GetGameStats(dto.TeamAId, dto.TeamAYear, dto.Features);
+
+                teamBStats = await GetGameStats(dto.TeamBId, dto.TeamBYear, dto.Features);
+            }
 
             ITransformer model = _gamePointsPredictionEngine.Train(dto.Features);
 
@@ -48,6 +65,32 @@ namespace nba_ml_api.Controllers
             forecast.TeamBPoints = (int)_gamePointsPredictionEngine.PredictGamePoints(teamBStats, model).Points;
 
             return Ok(forecast);
+        }
+
+        private Game GetGameStats(string teamId, string teamYear, Dictionary<string, float> userFeatures)
+        {
+            return new Game
+            {
+                TeamId = teamId,
+                GameDate = teamYear,
+                AST = GetStat("AST", userFeatures),
+                BLK = GetStat("BLK", userFeatures),
+                DREB = GetStat("DREB", userFeatures),
+                FG3A = GetStat("FG3A", userFeatures),
+                FG3M = GetStat("FG3M", userFeatures),
+                FG3_PCT = GetStat("FG3_PCT", userFeatures),
+                FGA = GetStat("FGA", userFeatures),
+                FGM = GetStat("FGM", userFeatures),
+                FG_PCT = GetStat("FG_PCT", userFeatures),
+                FTA = GetStat("FTA", userFeatures),
+                FTM = GetStat("FTM", userFeatures),
+                FT_PCT = GetStat("FT_PCT", userFeatures),
+                OREB = GetStat("OREB", userFeatures),
+                PF = GetStat("PF", userFeatures),
+                REB = GetStat("REB", userFeatures),
+                STL = GetStat("STL", userFeatures),
+                TOV = GetStat("TOV", userFeatures)
+            };
         }
 
         private async Task<Game> GetGameStats(string teamId, string teamYear, string[] features)

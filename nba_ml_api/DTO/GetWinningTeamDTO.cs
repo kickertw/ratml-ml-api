@@ -12,5 +12,7 @@ namespace nba_ml_api.DTO
         public string TeamAYear{ get; set; }
         public string TeamBYear { get; set; }
         public string[] Features { get; set; }
+        public Dictionary<string, float> TeamAFeatures { get; set; }
+        public Dictionary<string, float> TeamBFeatures { get; set; }
     }
 }
